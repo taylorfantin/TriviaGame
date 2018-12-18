@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Trivia Game</title>
+	<script src="https://code.jquery.com/jquery-3.1.1.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<h1 id="heading">It's Trivia Time</h1>
+	</div>
+	<div class="row">
+		<h5 id="timeRemaining" class="hidden">Time Remaining to Answer</h5>	
+	</div>
+	<div class="row">
+		<div id="content"></div>
+	</div>
+	<div class="row">
+		<div class="radio"><h6 class="questionBuild"></h6>
+	</div>
+	<div class="row">
+		<div id="responses"></div>
+	</div>
+	<div class="row">
+		<div id="submit-div"></div>
+	</div>
+</div>			
+
+<script>
+
+$(document).ready(function() {
+
+//Global Variables----------------------------------------------------
+var questionCounter = 0;
+var pause = 2000;
+var correct = 0;
+var incorrect = 0;
+var unanswered = 0;
+var countdown = 10;
+var intervalID;
+var userResponse = [];
+var questions = [
+{
+	question: "What is the larget planet in our solar system?",
+	choices: ["Earth", "Jupiter", "Saturn", "Mars", "Neptune"],
+	choicesAnswer: 1
+},
+{
+	question: "How many planets are in our solar system?",
+	choices: ["5", "6", "7", "8", "9"],
+	choicesAnswer: 3
+},
+{
+	question: "What planet is know for it's rings?",
+	choices: ["Mercury", "Venus", "Saturn", "Neptune", "Jupiter"],
+	choicesAnswer: 2
+},
+];
+
+//Displays the start page---------------------------------------------
+displayStart();
+
+//Start button function----------------------------------------------------
+function displayStart() 
+{
+	$("#content").append('<button id="start-button">' + "Begin Quiz" + '</button>');
+	$("#start-button").on("click", function(event) {
+		event.preventDefault();
+		displayQuestion();
+		timerReset();
+		$("#timeRemaining").removeClass("hidden");
+	});
+};
+
+
+//Function to display the given question---------------------------------------------
+function displayQuestion() 
+{
+	clearQuestion();
+	timerReset();
+	$(".questionBuild").html(questions[questionCounter].question);
+	createRadios();
+	$("#submit-div").append('<button type="submit" class="btn btn-default" id="submit">' + "Submit" + '</button>');
+	runTimer()
+	submitAnswer();
+};
+
+//Function to submit answers----------------------------------------------------------
+function submitAnswer() 
+{
+	$("#submit").on("click", function(event) 
+	{
+		event.preventDefault();
+		userResponse.length = 0;
+		var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
+		userResponse.push(userSelection);
+		console.log(userResponse);
+		nestQuestion();
+	});
+};
+
+//Function to move to the next question--------------------------------------------
+function nestQuestion() {
+	checkResponse();
+	questionCounter++;
+	if (questionCounter === questions.length) {
+		setTimeout(displayEnd, pause);
+	} 
+	else {
+		setTimeout(displayQuestion, pause);
+	};
+};
+
+//SECTION FOR TIMER FUNCTIONS-----------------------------------------
+function runTimer() 
+{
+	intervalID = setInterval(decrement, 1000);
+};
+
+function decrement() 
+{
+	countdown--;
+	$("#timeRemaining").html(countdown + " seconds remaining");
+	if (countdown === 0) 
+	{
+		stopTimer();
+		userResponse.length = 0;		
+		var userSelection = $("#responses input:radio[name=optionsRadios]:checked").val();
+		userResponse.push(userSelection);
+		console.log(userResponse);
+		nestQuestion();
+	};
+};
+
+function timerReset() 
+{
+	countdown = 10;
+	$("#timeRemaining").html(countdown + " seconds remaining");
+};
+
+function displayTimer() 
+{
+	$("#timeRemaining").html("");
+};
+
+function stopTimer() 
+{
+	clearInterval(intervalID);
+};
+
+//Function that builds the turns the questions into a radio display option---------------------------------------
+function createRadios() 
+{
+	var responseOptions = $("#responses");
+	responseOptions.empty();
+
+	for (var i = 0; i < questions[questionCounter].choices.length; i++) 
+	{
+		responseOptions.append('<input type="radio" name="optionsRadios" id="optionsRadios2" value="' + [i] +'"><div class="twd-opt">' + questions[questionCounter].choices[i] + '</div></input></label>');
+	};
+};
+
+//Function to show the end game stats and create a restart button-----------------------------------------
+function displayEnd() 
+{
+	clearQuestion();
+	$("#content").append('<h3>' + "Correct: " + correct + '<br>' + "Incorrect: " + incorrect + '<br>' + "Unanswered: " + unanswered + '<br><button href="#" id="restart-button">' + "Restart Game" + '</button>');
+	$("#restart-button").on("click", function(event) 
+	{
+		event.preventDefault();
+		reset();
+		clearQuestion();
+		displayStart();
+	});
+};
+
+//Function to reset the game--------------------------------
+function reset() 
+{
+	questionCounter = 0;
+	correct = 0;
+	incorrect = 0;
+	unanswered = 0;
+	userResponse = [];
+	timerReset();
+};
+
+//Clear the questions-----------------------------
+function clearQuestion() {
+	var questionDiv = $(".questionBuild");
+	questionDiv.empty()
+	var responsesDiv = $("#responses");
+	responsesDiv.empty();
+	var submitDiv = $("#submit-div");
+	submitDiv.empty();
+	var contentDiv = $("#content");
+	contentDiv.empty();
+	stopTimer();
+};
+
+//Check whether the answer was right or wrong, store the response and show the corrent answer
+function checkResponse() {
+	clearQuestion();
+	var correctAnswer = questions[questionCounter].choicesAnswer;
+	if (userResponse[0] == questions[questionCounter].choicesAnswer) {
+		correct++;
+		$("#content").append('<h3>'+"That is correct!" + '</h3>');
+		displayTimer();
+	}
+	else if (userResponse[0] === undefined) {
+		unanswered++;
+		$("#content").append('<h3>'+"Out of time!" + "<br>" + "The correct answer is: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
+		displayTimer();
+	}
+	else {
+		incorrect++;
+		$("#content").append('<h3>'+"You chose the wrong answer." + '<br>' + "The correct answer is: " + questions[questionCounter].choices[correctAnswer] + '</h3>');
+		displayTimer();
+	};
+};
+});
+</script>
+</body>
+</html>
+
